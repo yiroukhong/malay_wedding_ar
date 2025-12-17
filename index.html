@@ -504,6 +504,7 @@
             auto-rotate
             autoplay
             ar-scale="fixed"
+            ar-placement="floor"
             camera-orbit="45deg 75deg 8m"
             field-of-view="45deg"
             min-camera-orbit="auto auto 3m"
@@ -785,6 +786,14 @@
                 `;
                 alert('AR could not start. Please:\n1. Grant camera permission\n2. Make sure you have enough space\n3. Try again');
             }
+        });
+
+        viewer.addEventListener('ar-status', (event) => {
+            console.log('AR Status:', event.detail.status);
+        });
+
+        viewer.addEventListener('ar-placement', () => {
+            console.log('Model placed on the floor');
         });
 
         // ============================================
