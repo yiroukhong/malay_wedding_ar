@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rumah Penghulu Abu Seman - AR Experience</title>
+    <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.3.0/model-viewer.min.js"></script>
+    <style>
+        /* ============================================
+           RESET & BASE STYLES
+           ============================================ */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        /* ============================================
+           HEADER
+           ============================================ */
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            font-size: 26px;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .subtitle {
+            font-size: 16px;
+            opacity: 0.9;
+            margin-bottom: 5px;
+        }
+
+        .location {
+            font-size: 14px;
+            opacity: 0.8;
+            font-style: italic;
+        }
+
+        /* ============================================
+           MAIN CONTAINER
+           ============================================ */
+        main {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        /* ============================================
+           MODEL VIEWER (ROOM SCENE)
+           ============================================ */
+        model-viewer {
+            width: 100%;
+            height: 550px;
+            background: linear-gradient(#e0e0e0, #ffffff);
+            border-radius: 15px;
+            margin: 20px 0;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            position: relative;
+        }
+
+        /* AR Button */
+        #ar-button {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+            color: #000;
+            padding: 18px 45px;
+            border: none;
+            border-radius: 30px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            z-index: 100;
+            transition: all 0.3s ease;
+        }
+
+        #ar-button:hover {
+            transform: translateX(-50%) scale(1.05);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+
+        #ar-button:active {
+            transform: translateX(-50%) scale(0.95);
+        }
+
+        /* ============================================
+           ROOM MAP OVERLAY
+           ============================================ */
+        .room-map {
+            background: rgba(0,0,0,0.85);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+            border: 2px solid rgba(255,215,0,0.3);
+        }
+
+        .room-map h2 {
+            color: #FFD700;
+            margin-bottom: 15px;
+            text-align: center;
+            font-size: 20px;
+        }
+
+        .map-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            max-width: 600px;
+            margin: 20px auto;
+        }
+
+        .map-item {
+            background: rgba(255,215,0,0.1);
+            border: 2px solid rgba(255,215,0,0.3);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .map-item:hover {
+            background: rgba(255,215,0,0.2);
+            border-color: rgba(255,215,0,0.6);
+            transform: translateY(-3px);
+        }
+
+        .map-item .icon {
+            font-size: 32px;
+            margin-bottom: 8px;
+        }
+
+        .map-item .label {
+            font-size: 14px;
+            font-weight: bold;
+            color: #FFD700;
+            margin-bottom: 5px;
+        }
+
+        .map-item .position {
+            font-size: 12px;
+            opacity: 0.7;
+        }
+
+        /* ============================================
+           INSTRUCTIONS PANEL
+           ============================================ */
+        .instructions-panel {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            padding: 25px;
+            border-radius: 15px;
+            margin: 20px 0;
+        }
+
+        .instructions-panel h3 {
+            color: #FFD700;
+            margin-bottom: 15px;
+            font-size: 20px;
+        }
+
+        .step-list {
+            display: grid;
+            gap: 15px;
+        }
+
+        .step {
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+            background: rgba(255,255,255,0.05);
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #FFD700;
+        }
+
+        .step-number {
+            background: #FFD700;
+            color: #000;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+
+        .step-content {
+            flex: 1;
+        }
+
+        .step-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #FFD700;
+        }
+
+        .step-description {
+            font-size: 14px;
+            line-height: 1.5;
+            opacity: 0.9;
+        }
+
+        /* ============================================
+           ANIMATION CONTROLS
+           ============================================ */
+        .controls-section {
+            background: rgba(0,0,0,0.3);
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+        }
+
+        .controls-section h3 {
+            color: #FFD700;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .animation-controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .control-btn {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 2px solid rgba(255,255,255,0.3);
+            padding: 12px 25px;
+            border-radius: 25px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .control-btn:hover {
+            background: rgba(255,255,255,0.3);
+            border-color: rgba(255,255,255,0.5);
+            transform: translateY(-2px);
+        }
+
+        .control-btn.active {
+            background: #4CAF50;
+            border-color: #4CAF50;
+        }
+
+        /* ============================================
+           STATUS BAR
+           ============================================ */
+        .status-bar {
+            background: rgba(0,0,0,0.3);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        #device-status {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        #ar-guidance {
+            font-size: 14px;
+            color: #FFD700;
+            padding: 10px;
+            background: rgba(255,215,0,0.1);
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+            animation: blink 1.5s ease-in-out infinite;
+        }
+
+        .status-indicator.active {
+            background: #4CAF50;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        /* ============================================
+           CULTURAL INFO CARDS
+           ============================================ */
+        .cultural-context {
+            background: rgba(255,215,0,0.05);
+            border: 2px solid rgba(255,215,0,0.2);
+            padding: 25px;
+            border-radius: 15px;
+            margin: 20px 0;
+        }
+
+        .cultural-context h2 {
+            color: #FFD700;
+            margin-bottom: 15px;
+            font-size: 22px;
+        }
+
+        .cultural-context p {
+            line-height: 1.7;
+            margin-bottom: 15px;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .info-card {
+            background: rgba(0,0,0,0.2);
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #FFD700;
+        }
+
+        .info-card h4 {
+            color: #FFD700;
+            margin-bottom: 8px;
+            font-size: 16px;
+        }
+
+        .info-card p {
+            font-size: 14px;
+            line-height: 1.5;
+            margin: 0;
+        }
+
+        /* ============================================
+           LOADING
+           ============================================ */
+        #lazy-load-poster {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            background: linear-gradient(#e0e0e0, #ffffff);
+        }
+
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        #lazy-load-poster p {
+            color: #333;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        /* ============================================
+           TIPS BOX
+           ============================================ */
+        .tips-box {
+            background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+            color: #000;
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+            box-shadow: 0 4px 15px rgba(255,215,0,0.3);
+        }
+
+        .tips-box h3 {
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+
+        .tips-box ul {
+            margin-left: 20px;
+        }
+
+        .tips-box li {
+            margin: 8px 0;
+            line-height: 1.5;
+        }
+
+        /* ============================================
+           MOBILE RESPONSIVE
+           ============================================ */
+        @media (max-width: 600px) {
+            body {
+                padding: 10px;
+            }
+            
+            h1 {
+                font-size: 22px;
+            }
+            
+            model-viewer {
+                height: 450px;
+            }
+            
+            #ar-button {
+                padding: 15px 35px;
+                font-size: 16px;
+            }
+
+            .map-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+            }
+
+            .map-item .icon {
+                font-size: 28px;
+            }
+
+            .map-item .label {
+                font-size: 13px;
+            }
+
+            .step {
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
+
+        /* ============================================
+           DESKTOP TIP
+           ============================================ */
+        @media (min-width: 1024px) {
+            .desktop-tip {
+                background: #FFD700;
+                color: #000;
+                padding: 15px;
+                border-radius: 10px;
+                margin-bottom: 20px;
+                font-weight: bold;
+                text-align: center;
+                box-shadow: 0 4px 15px rgba(255,215,0,0.3);
+            }
+
+            .desktop-tip::before {
+                content: "💡 ";
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>🏛️ Rumah Penghulu Abu Seman</h1>
+        <p class="subtitle">Traditional Malay Wedding Ceremony AR Experience</p>
+        <p class="location">Virtual Heritage Tour by Badan Warisan Malaysia</p>
+    </header>
+    
+    <main>
+        <div class="desktop-tip">
+            Best experienced on smartphone! Open this page on your mobile device for the full AR experience.
+        </div>
+
+        <!-- MAIN AR VIEWER -->
+        <model-viewer 
+            id="viewer"
+            src="assets/models/group_people.glb"
+            ar 
+            ar-modes="webxr scene-viewer quick-look"
+            camera-controls 
+            shadow-intensity="1"
+            auto-rotate
+            autoplay
+            ar-scale="fixed"
+            camera-orbit="45deg 75deg 8m"
+            field-of-view="45deg"
+            min-camera-orbit="auto auto 3m"
+            max-camera-orbit="auto auto 15m"
+            alt="Traditional Malay Wedding Room - Rumah Penghulu Abu Seman">
+            
+            <button slot="ar-button" id="ar-button">
+                📱 Enter AR Experience
+            </button>
+            
+            <div id="lazy-load-poster" slot="poster">
+                <div class="loader"></div>
+                <p>Loading Heritage Room...</p>
+                <p style="font-size: 14px; margin-top: 10px;">Please wait...</p>
+            </div>
+        </model-viewer>
+
+        <!-- ROOM MAP -->
+        <div class="room-map">
+            <h2>🗺️ What You'll Find in This Room</h2>
+            <p style="text-align: center; margin-bottom: 20px; opacity: 0.9;">
+                Pan your camera around to discover these traditional elements positioned throughout the room
+            </p>
+            
+            <div class="map-grid">
+                <div class="map-item">
+                    <div class="icon">👰🤵</div>
+                    <div class="label">Bride & Groom</div>
+                    <div class="position">Center - Animated</div>
+                </div>
+                
+                <div class="map-item">
+                    <div class="icon">🪑</div>
+                    <div class="label">Pelamin</div>
+                    <div class="position">Center Back</div>
+                </div>
+                
+                <div class="map-item">
+                    <div class="icon">🌸</div>
+                    <div class="label">Bunga Rampai</div>
+                    <div class="position">Front Left</div>
+                </div>
+                
+                <div class="map-item">
+                    <div class="icon">🧣</div>
+                    <div class="label">Traditional Attire</div>
+                    <div class="position">Right Side</div>
+                </div>
+                
+                <div class="map-item">
+                    <div class="icon">🕌</div>
+                    <div class="label">Carpet</div>
+                    <div class="position">Floor - Base</div>
+                </div>
+                
+                <div class="map-item">
+                    <div class="icon">📜</div>
+                    <div class="label">Info Panels</div>
+                    <div class="position">Around Room</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- HOW TO USE -->
+        <div class="instructions-panel">
+            <h3>📱 How to Explore This AR Experience</h3>
+            <div class="step-list">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <div class="step-title">Tap "Enter AR Experience"</div>
+                        <div class="step-description">Press the gold button above to activate your camera and start the AR experience</div>
+                    </div>
+                </div>
+                
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <div class="step-title">Find a Large Open Space</div>
+                        <div class="step-description">You'll need about 3m x 3m of clear floor space. The ceremony room will be placed at real-world scale!</div>
+                    </div>
+                </div>
+                
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <div class="step-title">Scan the Floor</div>
+                        <div class="step-description">Move your phone slowly from side to side. White dots will appear when a flat surface is detected</div>
+                    </div>
+                </div>
+                
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <div class="step-content">
+                        <div class="step-title">Place the Room</div>
+                        <div class="step-description">Tap the screen where you want to place the ceremony room. The entire scene will appear!</div>
+                    </div>
+                </div>
+                
+                <div class="step">
+                    <div class="step-number">5</div>
+                    <div class="step-content">
+                        <div class="step-title">Walk Around & Explore</div>
+                        <div class="step-description">Move your phone (or walk) to see different angles. Characters will animate automatically. Look around to find all the traditional elements!</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ANIMATION CONTROLS -->
+        <div class="controls-section">
+            <h3>🎬 Animation Controls</h3>
+            <div class="animation-controls">
+                <button class="control-btn" id="play-btn" onclick="playAnimation()">
+                    ▶️ Play Animations
+                </button>
+                <button class="control-btn" id="pause-btn" onclick="pauseAnimation()">
+                    ⏸️ Pause
+                </button>
+                <button class="control-btn" id="restart-btn" onclick="restartAnimation()">
+                    ↺ Restart Scene
+                </button>
+            </div>
+        </div>
+
+        <!-- STATUS -->
+        <div class="status-bar">
+            <div id="device-status">
+                <span class="status-indicator active"></span>
+                Checking device compatibility...
+            </div>
+            <div id="ar-guidance">
+                💡 In AR mode, pan your phone around to discover all elements positioned throughout the room
+            </div>
+        </div>
+
+        <!-- TIPS -->
+        <div class="tips-box">
+            <h3>💡 Tips for Best Experience</h3>
+            <ul>
+                <li><strong>Space:</strong> Clear a 3m x 3m area for the full room-scale experience</li>
+                <li><strong>Lighting:</strong> Good lighting helps with plane detection</li>
+                <li><strong>Movement:</strong> Turn your body or walk around to see all elements</li>
+                <li><strong>Distance:</strong> Step back to see the whole scene, step closer to see details</li>
+                <li><strong>Multiple Views:</strong> Each element is positioned at its traditional location in the room</li>
+            </ul>
+        </div>
+
+        <!-- CULTURAL CONTEXT -->
+        <div class="cultural-context">
+            <h2>🕌 About This Experience</h2>
+            <p>
+                This AR experience recreates a traditional Malay wedding ceremony space within Rumah Penghulu Abu Seman, 
+                one of the oldest traditional Malay houses in Kuala Lumpur. Each element is positioned as it would be 
+                in an authentic ceremony, allowing you to virtually walk through and explore the sacred space.
+            </p>
+            
+            <div class="info-grid">
+                <div class="info-card">
+                    <h4>🎭 Spatial Layout</h4>
+                    <p>All elements are positioned at their traditional locations, creating an authentic room-scale recreation you can explore by moving around</p>
+                </div>
+                
+                <div class="info-card">
+                    <h4>⚖️ Real-World Scale</h4>
+                    <p>The scene is sized to match real dimensions: the pelamin is ~2m wide, characters are ~165cm tall, giving you a true sense of the space</p>
+                </div>
+                
+                <div class="info-card">
+                    <h4>🎬 Living History</h4>
+                    <p>Animated characters demonstrate traditional ceremony movements, bringing the cultural heritage to life in your space</p>
+                </div>
+                
+                <div class="info-card">
+                    <h4>📍 Interactive Discovery</h4>
+                    <p>Pan your camera around to find different elements - just like exploring a real heritage room!</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // ============================================
+        // GLOBAL VARIABLES
+        // ============================================
+        const viewer = document.querySelector('#viewer');
+        const deviceStatus = document.querySelector('#device-status');
+        const arGuidance = document.querySelector('#ar-guidance');
+        const playBtn = document.querySelector('#play-btn');
+        const pauseBtn = document.querySelector('#pause-btn');
+
+        let isPlaying = false;
+        let isInAR = false;
+
+        // ============================================
+        // INITIALIZATION
+        // ============================================
+        console.log('🏛️ Rumah Penghulu Abu Seman AR Experience');
+        console.log('📱 Room-scale multi-model AR initialized');
+        console.log('🗺️ Multiple elements positioned in 3D space');
+
+        // ============================================
+        // MODEL LOADING
+        // ============================================
+        viewer.addEventListener('load', () => {
+            console.log('✅ Complete room scene loaded!');
+            checkARSupport();
+            
+            // Auto-play animations
+            setTimeout(() => {
+                playAnimation();
+            }, 500);
+        });
+
+        viewer.addEventListener('progress', (event) => {
+            const progress = event.detail.totalProgress * 100;
+            
+            if (progress < 100) {
+                deviceStatus.innerHTML = `
+                    <span class="status-indicator active"></span>
+                    Loading heritage room: ${progress.toFixed(0)}%
+                `;
+            }
+        });
+
+        // ============================================
+        // AR SUPPORT CHECK
+        // ============================================
+        function checkARSupport() {
+            if (viewer.canActivateAR) {
+                console.log('✅ AR supported - Room-scale experience ready');
+                deviceStatus.innerHTML = `
+                    <span class="status-indicator active"></span>
+                    ✅ AR Ready! Tap button to place the entire ceremony room in your space
+                `;
+            } else {
+                console.log('⚠️ AR not supported - 3D preview only');
+                deviceStatus.innerHTML = `
+                    <span class="status-indicator"></span>
+                    ⚠️ AR not available on this device. Use your phone for full AR, or explore the 3D model here
+                `;
+                document.querySelector('#ar-button').textContent = '🖼️ View 3D Model';
+                arGuidance.innerHTML = '💻 Drag to rotate, scroll to zoom, click elements to learn more';
+            }
+        }
+
+        // ============================================
+        // AR SESSION HANDLING
+        // ============================================
+        viewer.addEventListener('ar-status', (event) => {
+            const status = event.detail.status;
+            
+            if (status === 'session-started') {
+                console.log('🎉 AR session started - Room-scale mode active!');
+                isInAR = true;
+                deviceStatus.innerHTML = `
+                    <span class="status-indicator active"></span>
+                    🎉 AR Active! Pan around to see all elements
+                `;
+                arGuidance.innerHTML = `
+                    🔄 Turn your phone left and right to discover all ceremony elements<br>
+                    🚶 Walk around the scene for different perspectives
+                `;
+                
+                // Auto-play animations in AR
+                playAnimation();
+                
+            } else if (status === 'not-presenting') {
+                console.log('AR session ended');
+                isInAR = false;
+                checkARSupport();
+                arGuidance.innerHTML = '💡 In AR mode, pan your phone around to discover all elements';
+                
+            } else if (status === 'failed') {
+                console.error('❌ AR session failed');
+                deviceStatus.innerHTML = `
+                    <span class="status-indicator"></span>
+                    ❌ AR failed to start. Check camera permission
+                `;
+                alert('AR could not start. Please:\n1. Grant camera permission\n2. Make sure you have enough space\n3. Try again');
+            }
+        });
+
+        // ============================================
+        // ANIMATION CONTROLS
+        // ============================================
+        function playAnimation() {
+            viewer.play();
+            isPlaying = true;
+            updateButtonStates();
+            console.log('▶️ Animations playing');
+        }
+
+        function pauseAnimation() {
+            viewer.pause();
+            isPlaying = false;
+            updateButtonStates();
+            console.log('⏸️ Animations paused');
+        }
+
+        function restartAnimation() {
+            viewer.currentTime = 0;
+            viewer.play();
+            isPlaying = true;
+            updateButtonStates();
+            console.log('↺ Scene restarted');
+        }
+
+        function updateButtonStates() {
+            playBtn.classList.toggle('active', isPlaying);
+            pauseBtn.classList.toggle('active', !isPlaying);
+        }
+
+        // ============================================
+        // ERROR HANDLING
+        // ============================================
+        viewer.addEventListener('error', (event) => {
+            console.error('❌ Error loading room scene:', event.detail);
+            deviceStatus.innerHTML = `
+                <span class="status-indicator"></span>
+                ❌ Error loading room. Check your model file path.
+            `;
+            arGuidance.innerHTML = '⚠️ Make sure complete-room-scene.glb is in assets/models/';
+        });
+
+        // ============================================
+        // KEYBOARD SHORTCUTS
+        // ============================================
+        document.addEventListener('keydown', (event) => {
+            if (event.code === 'Space') {
+                event.preventDefault();
+                if (isPlaying) {
+                    pauseAnimation();
+                } else {
+                    playAnimation();
+                }
+            } else if (event.code === 'KeyR') {
+                event.preventDefault();
+                restartAnimation();
+            }
+        });
+
+        // ============================================
+        // CONSOLE GUIDE
+        // ============================================
+        console.log(`
+╔════════════════════════════════════════════════╗
+║   RUMAH PENGHULU ABU SEMAN - AR EXPERIENCE    ║
+║         Room-Scale Multi-Model AR             ║
+╚════════════════════════════════════════════════╝
+
+🗺️ SCENE STRUCTURE:
+   - All models combined in ONE GLB file
+   - Elements positioned at fixed 3D coordinates
+   - User pans camera to discover elements
+   - Real-world scale for immersive experience
+
+📍 ELEMENT POSITIONS:
+   - Center: Bride & Groom (animated)
+   - Back: Pelamin
+   - Left: Traditional items
+   - Right: Attire display
+   - Floor: Carpet base
+
+🎮 CONTROLS:
+   Space - Play/Pause animations
+   R     - Restart scene
+        `);
+    </script>
+</body>
+</html>
